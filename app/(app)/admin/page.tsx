@@ -28,6 +28,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getPendingUsers, approveUser, rejectUser } from "@/lib/auth-actions"
+import { getAdminManualRequests, reviewManualRequest } from "@/lib/attendance-actions"
+import { Textarea } from "@/components/ui/textarea"
+import { FileText } from "lucide-react"
 
 type Profile = {
   id: string
@@ -213,7 +216,7 @@ export default function AdminPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
-          <p className="text-xs text-muted-foreground">Manage user approvals</p>
+          <p className="text-xs text-muted-foreground">Users & attendance</p>
         </div>
         <Button
           variant="outline"
@@ -261,18 +264,22 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending" className="gap-1.5">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="pending" className="gap-1 text-[11px]">
             <Clock className="h-3.5 w-3.5" />
             Pending
           </TabsTrigger>
-          <TabsTrigger value="approved" className="gap-1.5">
+          <TabsTrigger value="approved" className="gap-1 text-[11px]">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Approved
           </TabsTrigger>
-          <TabsTrigger value="rejected" className="gap-1.5">
+          <TabsTrigger value="rejected" className="gap-1 text-[11px]">
             <XCircle className="h-3.5 w-3.5" />
             Rejected
+          </TabsTrigger>
+          <TabsTrigger value="manual" className="gap-1 text-[11px]">
+            <FileText className="h-3.5 w-3.5" />
+            Manual
           </TabsTrigger>
         </TabsList>
 
@@ -349,6 +356,10 @@ export default function AdminPage() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="manual" className="mt-4">
+          <ManualRequestsTab />
+        </TabsContent>
       </Tabs>
 
       {/* Confirm Dialog */}
@@ -375,6 +386,179 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  )
+}
+
+// ==================== MANUAL REQUESTS TAB ====================
+type ManualRequest = {
+  id: string
+  user_id: string
+  requested_date: string
+  clock_in_time: string
+  clock_out_time: string
+  reason: string
+  status: string
+  review_notes: string | null
+  created_at: string
+  profiles?: {
+    first_name: string | null
+    last_name: string | null
+    email: string | null
+    department: string | null
+  }
+}
+
+function ManualRequestsTab() {
+  const [requests, setRequests] = useState<ManualRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [reviewingId, setReviewingId] = useState<string | null>(null)
+  const [reviewNotes, setReviewNotes] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true)
+    const result = await getAdminManualRequests("pending")
+    if (result.data) {
+      setRequests(result.data as ManualRequest[])
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadRequests()
+  }, [loadRequests])
+
+  async function handleReview(requestId: string, status: "approved" | "rejected") {
+    setActionLoading(true)
+    const result = await reviewManualRequest({
+      requestId,
+      status,
+      reviewNotes: reviewNotes.trim() || undefined,
+    })
+    if (!result.error) {
+      setReviewingId(null)
+      setReviewNotes("")
+      await loadRequests()
+    }
+    setActionLoading(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12">
+        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading requests...</p>
+      </div>
+    )
+  }
+
+  if (requests.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+          <FileText className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <p className="text-sm text-muted-foreground">No pending manual entries</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {requests.map((req) => {
+        const name = req.profiles
+          ? [req.profiles.first_name, req.profiles.last_name].filter(Boolean).join(" ") || "Unknown"
+          : "Unknown"
+        const isReviewing = reviewingId === req.id
+
+        return (
+          <div key={req.id} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {req.profiles?.email} {req.profiles?.department ? `- ${req.profiles.department}` : ""}
+                </p>
+              </div>
+              <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning text-[10px]">
+                Pending
+              </Badge>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{new Date(req.requested_date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                <span>
+                  {new Date(req.clock_in_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {" - "}
+                  {new Date(req.clock_out_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-2 rounded-md bg-muted/30 px-3 py-2 text-xs text-foreground">
+              {req.reason}
+            </p>
+
+            {isReviewing ? (
+              <div className="mt-3 flex flex-col gap-2">
+                <Textarea
+                  placeholder="Add review notes (optional)..."
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                  rows={2}
+                  className="text-xs"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-1.5 text-xs"
+                    onClick={() => handleReview(req.id, "approved")}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 gap-1.5 text-xs text-destructive border-destructive/20"
+                    onClick={() => handleReview(req.id, "rejected")}
+                    disabled={actionLoading}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs"
+                  onClick={() => { setReviewingId(null); setReviewNotes("") }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => setReviewingId(req.id)}
+                >
+                  Review
+                </Button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
