@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, User, Briefcase, ArrowRight, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { signUp } from "@/lib/auth-actions"
 
 const DOMAIN = "@skillariondevelopment.in"
 
@@ -81,6 +83,7 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -91,15 +94,49 @@ export default function SignupPage() {
     confirmPassword: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError("")
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    if (!formData.department) {
+      setError("Please select a department")
+      return
+    }
+
     setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1500)
+
+    const result = await signUp({
+      email: `${formData.emailPrefix}${DOMAIN}`,
+      password: formData.password,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      department: formData.department,
+    })
+
+    if (result.error) {
+      setError(result.error)
+      setIsLoading(false)
+      return
+    }
+
+    // Redirect to verify email page
+    router.push(`/verify-email?email=${encodeURIComponent(`${formData.emailPrefix}${DOMAIN}`)}`)
   }
 
   return (
@@ -114,6 +151,13 @@ export default function SignupPage() {
           </p>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -41,14 +41,25 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    // if the user is not logged in and the app path, in this case, /protected, is accessed, redirect to the login page
-    request.nextUrl.pathname.startsWith('/protected') &&
-    !user
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const pathname = request.nextUrl.pathname
+
+  // Public auth routes that don't require login
+  const publicRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/verify-2fa', '/auth/callback', '/auth/confirm']
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
+  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/tasks') || pathname.startsWith('/calendar') || pathname.startsWith('/analytics') || pathname.startsWith('/profile') || pathname.startsWith('/admin')
+
+  // If trying to access app routes without being logged in, redirect to login
+  if (isAppRoute && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // If logged in and trying to access auth routes (except pending-approval), check status
+  if (user && (isPublicRoute || pathname === '/')) {
+    // Check profile approval status via a header we'll set
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 

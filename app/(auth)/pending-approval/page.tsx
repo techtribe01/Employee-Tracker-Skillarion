@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Clock, ArrowLeft, RefreshCw, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { checkApprovalStatus, signOut } from "@/lib/auth-actions"
 
 const STEPS = [
   { label: "Account created", done: true },
@@ -14,11 +16,30 @@ const STEPS = [
 ]
 
 export default function PendingApprovalPage() {
+  const router = useRouter()
   const [isChecking, setIsChecking] = useState(false)
+  const [statusMessage, setStatusMessage] = useState("")
 
-  function handleCheckStatus() {
+  async function handleCheckStatus() {
     setIsChecking(true)
-    setTimeout(() => setIsChecking(false), 1500)
+    setStatusMessage("")
+
+    const result = await checkApprovalStatus()
+
+    if (result.status === "approved") {
+      setStatusMessage("Your account has been approved! Redirecting...")
+      setTimeout(() => router.push("/dashboard"), 1500)
+    } else if (result.status === "rejected") {
+      setStatusMessage("Your account has been rejected. Please contact admin.")
+    } else {
+      setStatusMessage("Still pending approval. Please check back later.")
+    }
+
+    setIsChecking(false)
+  }
+
+  async function handleSignOut() {
+    await signOut()
   }
 
   return (
@@ -95,6 +116,13 @@ export default function PendingApprovalPage() {
         </div>
       </div>
 
+      {/* Status message */}
+      {statusMessage && (
+        <div className="w-full rounded-lg border border-border bg-card p-3">
+          <p className="text-sm text-muted-foreground">{statusMessage}</p>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex w-full flex-col gap-3">
         <Button
@@ -134,7 +162,10 @@ export default function PendingApprovalPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Sign in
         </Link>
-        <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive"
+        >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
         </button>

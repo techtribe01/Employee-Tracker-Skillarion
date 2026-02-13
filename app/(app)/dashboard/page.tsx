@@ -1,7 +1,10 @@
 "use client"
 
-import { Bell, ChevronRight, Clock, CalendarDays, CheckCircle2, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Bell, ChevronRight, Clock, CalendarDays, CheckCircle2, AlertCircle, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getProfile } from "@/lib/auth-actions"
 
 const QUICK_STATS = [
   { label: "Hours Today", value: "4h 32m", icon: Clock, color: "bg-primary/10 text-primary" },
@@ -16,20 +19,58 @@ const RECENT_TASKS = [
   { title: "Fix authentication bug", status: "In Progress", priority: "High", color: "bg-destructive" },
 ]
 
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 17) return "Good afternoon"
+  return "Good evening"
+}
+
 export default function DashboardPage() {
+  const [profile, setProfile] = useState<{
+    first_name: string | null
+    last_name: string | null
+    role: string
+    department: string | null
+  } | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      const result = await getProfile()
+      if (result.profile) {
+        setProfile(result.profile)
+      }
+    }
+    load()
+  }, [])
+
+  const displayName = profile
+    ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "User"
+    : "..."
+
   return (
     <div className="flex flex-col gap-6 px-5 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Good morning</p>
-          <h1 className="text-xl font-bold text-foreground">Rahul Kumar</h1>
+          <p className="text-sm text-muted-foreground">{getGreeting()}</p>
+          <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
         </div>
-        <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {profile?.role === "admin" && (
+            <Link href="/admin">
+              <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="sr-only">Admin panel</span>
+              </Button>
+            </Link>
+          )}
+          <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+        </div>
       </div>
 
       {/* Clock In/Out Card */}
@@ -75,10 +116,10 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-foreground">Recent Tasks</h2>
-          <button className="flex items-center gap-1 text-xs font-medium text-primary">
+          <Link href="/tasks" className="flex items-center gap-1 text-xs font-medium text-primary">
             View all
             <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          </Link>
         </div>
         <div className="flex flex-col gap-2.5">
           {RECENT_TASKS.map((task) => (

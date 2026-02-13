@@ -1,26 +1,67 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { signIn } from "@/lib/auth-actions"
 
 const DOMAIN = "@skillariondevelopment.in"
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex w-full max-w-sm flex-col items-center gap-4 pt-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackError = searchParams.get("error")
+
   const [showPassword, setShowPassword] = useState(false)
   const [emailPrefix, setEmailPrefix] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(
+    callbackError === "auth_callback_error"
+      ? "Authentication failed. Please try again."
+      : callbackError === "account_rejected"
+        ? "Your account has been rejected. Please contact admin."
+        : ""
+  )
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError("")
     setIsLoading(true)
-    // Will be wired to Supabase auth
-    setTimeout(() => setIsLoading(false), 1500)
+
+    const result = await signIn({
+      email: `${emailPrefix}${DOMAIN}`,
+      password,
+    })
+
+    if (result.error) {
+      if (result.error === "pending_approval") {
+        router.push("/pending-approval")
+        return
+      }
+      setError(result.error === "Invalid login credentials"
+        ? "Invalid email or password. Please try again."
+        : result.error)
+      setIsLoading(false)
+      return
+    }
+
+    if (result.redirect) {
+      router.push(result.redirect)
+    }
   }
 
   return (
@@ -35,6 +76,13 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">

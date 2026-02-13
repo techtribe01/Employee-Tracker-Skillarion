@@ -1,21 +1,41 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Mail, ArrowLeft, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { resendVerificationEmail } from "@/lib/auth-actions"
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="flex w-full max-w-sm flex-col items-center gap-4 pt-12"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+      <VerifyEmailContent />
+    </Suspense>
+  )
+}
+
+function VerifyEmailContent() {
+  const searchParams = useSearchParams()
+  const email = searchParams.get("email") || ""
   const [isResending, setIsResending] = useState(false)
   const [resendCount, setResendCount] = useState(0)
+  const [resendError, setResendError] = useState("")
 
-  function handleResend() {
+  async function handleResend() {
+    if (!email) return
     setIsResending(true)
-    setTimeout(() => {
-      setIsResending(false)
+    setResendError("")
+
+    const result = await resendVerificationEmail(email)
+
+    if (result.error) {
+      setResendError(result.error)
+    } else {
       setResendCount((prev) => prev + 1)
-    }, 1500)
+    }
+    setIsResending(false)
   }
 
   return (
@@ -32,7 +52,12 @@ export default function VerifyEmailPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Verify your email</h1>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          {"We've sent a verification link to your work email. Click the link to verify your account."}
+          {"We've sent a verification link to "}
+          {email && (
+            <span className="font-medium text-foreground">{email}</span>
+          )}
+          {!email && "your work email"}
+          {". Click the link to verify your account."}
         </p>
       </div>
 
@@ -66,7 +91,7 @@ export default function VerifyEmailPage() {
           variant="outline"
           className="h-12 w-full gap-2"
           onClick={handleResend}
-          disabled={isResending}
+          disabled={isResending || !email}
         >
           {isResending ? (
             <>
@@ -80,10 +105,13 @@ export default function VerifyEmailPage() {
             </>
           )}
         </Button>
-        {resendCount > 0 && (
+        {resendCount > 0 && !resendError && (
           <p className="text-xs text-success">
             Verification email resent successfully!
           </p>
+        )}
+        {resendError && (
+          <p className="text-xs text-destructive">{resendError}</p>
         )}
       </div>
 
