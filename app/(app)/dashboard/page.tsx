@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
-  Bell,
   ChevronRight,
   Clock,
   CalendarDays,
@@ -12,11 +11,19 @@ import {
   Shield,
   Coffee,
   FileText,
+  ClipboardList,
+  Circle,
+  RotateCcw,
+  Eye,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { getProfile } from "@/lib/auth-actions"
 import { getWeeklyStats } from "@/lib/attendance-actions"
+import { getMyTasks, getTaskStats, type TaskRow } from "@/lib/task-actions"
 import { ClockWidget } from "@/components/clock-widget"
+import { NotificationsPanel } from "@/components/notifications-panel"
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -39,15 +46,29 @@ export default function DashboardPage() {
     recordCount: number
     dailyBreakdown: Record<string, number>
   } | null>(null)
+  const [urgentTasks, setUrgentTasks] = useState<TaskRow[]>([])
+  const [taskStats, setTaskStats] = useState<{
+    total: number
+    not_started: number
+    in_progress: number
+    under_review: number
+    completed: number
+    verified: number
+    high_priority: number
+  } | null>(null)
 
   useEffect(() => {
     async function load() {
-      const [profileResult, statsResult] = await Promise.all([
+      const [profileResult, statsResult, tasksResult, taskStatsResult] = await Promise.all([
         getProfile(),
         getWeeklyStats(),
+        getMyTasks({ status: "in_progress" }),
+        getTaskStats(),
       ])
       if (profileResult.profile) setProfile(profileResult.profile)
       if (statsResult.data) setWeeklyStats(statsResult.data)
+      if (tasksResult.data) setUrgentTasks(tasksResult.data.slice(0, 3))
+      if (taskStatsResult.data) setTaskStats(taskStatsResult.data)
     }
     load()
   }, [])
@@ -111,14 +132,7 @@ export default function DashboardPage() {
               </Button>
             </Link>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-10 w-10 rounded-full"
-          >
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+          <NotificationsPanel />
         </div>
       </div>
 
@@ -194,6 +208,57 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      {/* Active Tasks */}
+      {taskStats && taskStats.total > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">My Tasks</h2>
+            </div>
+            <Link href="/tasks" className="text-xs text-primary font-medium">
+              View all
+            </Link>
+          </div>
+
+          {/* Mini stat row */}
+          <div className="mb-3 grid grid-cols-4 gap-1.5">
+            {[
+              { label: "To Do", value: taskStats.not_started, color: "text-muted-foreground" },
+              { label: "Active", value: taskStats.in_progress, color: "text-warning" },
+              { label: "Review", value: taskStats.under_review, color: "text-info" },
+              { label: "Done", value: taskStats.completed, color: "text-success" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center rounded-lg bg-muted/40 px-1 py-1.5">
+                <span className={`text-sm font-bold ${s.color}`}>{s.value}</span>
+                <span className="text-[9px] text-muted-foreground">{s.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Active task list */}
+          {urgentTasks.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {urgentTasks.map((task) => {
+                const isUrgent = task.priority === "high" || task.priority === "urgent"
+                return (
+                  <Link key={task.id} href={`/tasks/${task.id}`}>
+                    <div className="flex items-center gap-2.5 rounded-lg bg-muted/30 px-3 py-2 transition-colors active:bg-muted/50">
+                      <RotateCcw className="h-3.5 w-3.5 shrink-0 text-warning" />
+                      <p className="flex-1 truncate text-xs font-medium text-foreground">{task.title}</p>
+                      {isUrgent && <AlertTriangle className="h-3 w-3 shrink-0 text-warning" />}
+                      <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground py-2">No active tasks right now</p>
+          )}
+        </div>
+      )}
 
       {/* Quick Links */}
       <div className="flex flex-col gap-2">

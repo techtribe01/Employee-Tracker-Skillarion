@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   Users,
@@ -13,6 +14,7 @@ import {
   Mail,
   Briefcase,
   Calendar,
+  ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -261,6 +263,20 @@ export default function AdminPage() {
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <Link href="/admin/tasks">
+        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 transition-colors active:bg-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">Manage Tasks</p>
+            <p className="text-[11px] text-muted-foreground">Create, assign & verify employee tasks</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </Link>
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="w-full">
