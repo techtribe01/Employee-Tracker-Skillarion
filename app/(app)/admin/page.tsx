@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getPendingUsers, approveUser, rejectUser } from "@/lib/auth-actions"
 import { getAdminManualRequests, reviewManualRequest } from "@/lib/attendance-actions"
 import { Textarea } from "@/components/ui/textarea"
-import { FileText } from "lucide-react"
+import { FileText, Palmtree } from "lucide-react"
 
 type Profile = {
   id: string
@@ -265,18 +265,32 @@ export default function AdminPage() {
       )}
 
       {/* Quick Actions */}
-      <Link href="/admin/tasks">
-        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 transition-colors active:bg-primary/10">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <FileText className="h-5 w-5 text-primary" />
+      <div className="flex flex-col gap-2.5">
+        <Link href="/admin/tasks">
+          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 transition-colors active:bg-primary/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Manage Tasks</p>
+              <p className="text-[11px] text-muted-foreground">Create, assign & verify employee tasks</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">Manage Tasks</p>
-            <p className="text-[11px] text-muted-foreground">Create, assign & verify employee tasks</p>
+        </Link>
+        <Link href="/admin/leaves">
+          <div className="flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-4 transition-colors active:bg-warning/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
+              <Palmtree className="h-5 w-5 text-warning" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">Manage Leaves</p>
+              <p className="text-[11px] text-muted-foreground">Review & approve leave requests</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="pending" className="w-full">
