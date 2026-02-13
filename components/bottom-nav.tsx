@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Clock,
-  BarChart3,
+  ClipboardList,
   CalendarDays,
   User,
 } from "lucide-react"
@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils"
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/attendance", label: "Attendance", icon: Clock },
+  { href: "/tasks", label: "Tasks", icon: ClipboardList },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/analytics", label: "Reports", icon: BarChart3 },
   { href: "/profile", label: "Profile", icon: User },
 ]
 

@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
   // Public auth routes that don't require login
   const publicRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/verify-2fa', '/auth/callback', '/auth/confirm']
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
-  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/tasks') || pathname.startsWith('/calendar') || pathname.startsWith('/analytics') || pathname.startsWith('/profile') || pathname.startsWith('/admin') || pathname.startsWith('/attendance')
+  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/tasks') || pathname.startsWith('/calendar') || pathname.startsWith('/analytics') || pathname.startsWith('/profile') || pathname.startsWith('/admin') || pathname.startsWith('/attendance') || pathname.startsWith('/leave')
 
   // If trying to access app routes without being logged in, redirect to login
   if (isAppRoute && !user) {

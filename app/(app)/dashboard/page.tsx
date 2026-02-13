@@ -282,6 +282,25 @@ export default function DashboardPage() {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
         <Link
+          href="/calendar"
+          className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
+              <CalendarDays className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Calendar & Schedule
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Events, leaves & deadlines
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link
           href="/analytics"
           className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
         >
