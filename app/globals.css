@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer base {
+  :root {
+    /* SkillArion Light Theme - Teal brand with warm neutrals */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+    --primary: 173 58% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 16% 93%;
+    --secondary-foreground: 220 20% 15%;
+    --muted: 210 14% 95%;
+    --muted-foreground: 220 10% 46%;
+    --accent: 210 16% 93%;
+    --accent-foreground: 220 20% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 14% 89%;
+    --input: 214 14% 89%;
+    --ring: 173 58% 39%;
+    --chart-1: 173 58% 39%;
+    --chart-2: 217 72% 56%;
+    --chart-3: 142 52% 45%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 51%;
+    --radius: 0.75rem;
+
+    /* Custom tokens for the app */
+    --success: 142 52% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 72% 56%;
+    --info-foreground: 0 0% 100%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 10%;
+    --sidebar-primary: 173 58% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 16% 93%;
+    --sidebar-accent-foreground: 220 20% 15%;
+    --sidebar-border: 214 14% 89%;
+    --sidebar-ring: 173 58% 39%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Ensure light theme only */
+  html {
+    color-scheme: light;
+  }
+}
