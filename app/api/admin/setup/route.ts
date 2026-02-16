@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const adminEmail = 'manoj@skillariondevelopement.in'
-    const tempPassword = Math.random().toString(36).slice(-16) + 'Aa1!'
+    const tempPassword = 'TechTribe01'
 
     // 1. Create auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({

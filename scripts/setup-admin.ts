@@ -23,7 +23,7 @@ export async function setupAdminUser() {
   })
 
   const adminEmail = 'manoj@skillariondevelopement.in'
-  const adminPassword = 'TempPassword123!' // User should change this on first login
+  const adminPassword = 'TechTribe01'
 
   try {
     // 1. Create the user in Supabase Auth

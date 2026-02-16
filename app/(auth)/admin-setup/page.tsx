@@ -66,6 +66,7 @@ export default function AdminSetupPage() {
                 <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
                   <p className="text-sm text-muted-foreground mb-2">Account to create:</p>
                   <p className="font-mono text-sm text-foreground">manoj@skillariondevelopement.in</p>
+                  <p className="text-sm text-muted-foreground mt-2">Password: TechTribe01</p>
                 </div>
 
                 <div className="bg-info/5 rounded-lg p-3 border border-info/20 flex gap-2">
