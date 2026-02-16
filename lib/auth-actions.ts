@@ -100,9 +100,11 @@ export async function forgotPassword(email: string) {
   })
 
   if (error) {
+    console.error("[v0] Password reset error:", error)
     return { error: error.message }
   }
 
+  console.log("[v0] Password reset email sent to:", email)
   return { success: true }
 }
 
