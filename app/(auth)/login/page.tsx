@@ -42,25 +42,25 @@ function LoginForm() {
     setError("")
     setIsLoading(true)
 
-    const result = await signIn({
-      email: `${emailPrefix}${DOMAIN}`,
-      password,
-    })
+    try {
+      const result = await signIn({
+        email: `${emailPrefix}${DOMAIN}`,
+        password,
+      })
 
-    if (result.error) {
-      if (result.error === "pending_approval") {
-        router.push("/pending-approval")
-        return
+      // If we get here, there was an error (redirect happens server-side)
+      if (result?.error) {
+        setError(result.error === "Invalid login credentials"
+          ? "Invalid email or password. Please try again."
+          : result.error)
+        setIsLoading(false)
       }
-      setError(result.error === "Invalid login credentials"
-        ? "Invalid email or password. Please try again."
-        : result.error)
+    } catch (error) {
+      // Server action threw an error or redirected
+      console.error("[v0] Login error:", error)
+      // Redirect is handled server-side, so if we're here it's an unexpected error
+      setError("An unexpected error occurred. Please try again.")
       setIsLoading(false)
-      return
-    }
-
-    if (result.redirect) {
-      router.push(result.redirect)
     }
   }
 

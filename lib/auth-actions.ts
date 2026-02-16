@@ -73,14 +73,17 @@ export async function signIn(formData: {
       .single()
 
     if (profile?.status === 'pending_approval') {
-      return { error: 'pending_approval', redirect: '/pending-approval' }
+      redirect('/pending-approval')
     }
     if (profile?.status === 'rejected') {
       return { error: 'Your account has been rejected. Please contact admin.' }
     }
+    
+    // User is approved, redirect to dashboard
+    redirect('/dashboard')
   }
 
-  return { success: true, redirect: '/dashboard' }
+  return { success: true }
 }
 
 export async function signOut() {
