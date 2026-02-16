@@ -10,6 +10,7 @@ export function SkillArionLogo({ className = "" }: { className?: string }) {
           width={40}
           height={40}
           className="object-contain"
+          style={{ width: 'auto', height: 'auto' }}
         />
       </div>
       <div className="flex flex-col">
