@@ -1,5 +1,3 @@
-'use server'
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getSystemDiagnostics, checkDatabasePerformance } from '@/lib/monitoring'
 import { withSecurityHeaders } from '@/lib/security-headers'
