@@ -301,7 +301,7 @@ export default function DashboardPage() {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
         <Link
-          href="/analytics"
+          href="/analytics-dashboard"
           className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
         >
           <div className="flex items-center gap-3">
@@ -310,10 +310,10 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">
-                Attendance Reports
+                Analytics Dashboard
               </p>
               <p className="text-xs text-muted-foreground">
-                Weekly & monthly analytics
+                KPIs, charts & metrics
               </p>
             </div>
           </div>
