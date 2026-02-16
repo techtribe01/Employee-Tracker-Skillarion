@@ -16,7 +16,7 @@ const spaceMono = Space_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "SkillArion - Employee Work Tracker",
+  title: "SkillArion Development - Employee Work Tracker",
   description:
     "Track employee productivity, attendance, tasks, and performance for SkillArion Development.",
 }
