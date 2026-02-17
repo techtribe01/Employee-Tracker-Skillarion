@@ -95,13 +95,25 @@ export async function signOut() {
 export async function forgotPassword(email: string) {
   const supabase = await createClient()
 
+  // Get the correct redirect URL - try multiple env vars for compatibility
+  const baseUrl = 
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+    'http://localhost:3000'
+
+  const redirectUrl = `${baseUrl}/auth/callback?next=/reset-password`
+
+  console.log("[v0] Requesting password reset for:", email)
+  console.log("[v0] Redirect URL:", redirectUrl)
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/profile`,
+    redirectTo: redirectUrl,
   })
 
   if (error) {
     console.error("[v0] Password reset error:", error)
-    return { error: error.message }
+    return { error: error.message || 'Failed to send password reset email. Please try again.' }
   }
 
   console.log("[v0] Password reset email sent to:", email)
