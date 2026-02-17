@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
@@ -10,7 +10,10 @@ import { Label } from '@/components/ui/label'
 import { SkillArionLogo } from '@/components/skillarion-logo'
 import { createClient } from '@/lib/supabase/client'
 
-export default function ResetPasswordPage() {
+// Prevent prerendering this page - it requires dynamic interaction
+export const dynamic = 'force-dynamic'
+
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
@@ -187,5 +190,13 @@ export default function ResetPasswordPage() {
         Back to sign in
       </Link>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
