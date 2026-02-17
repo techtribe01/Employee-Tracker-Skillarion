@@ -59,9 +59,15 @@ export async function signUpAdmin(formData: {
   const supabase = await createClient()
 
   // Verify admin code (should be stored securely in environment or database)
-  const validAdminCodes = (process.env.ADMIN_REGISTRATION_CODES || '').split(',')
+  const validAdminCodes = (process.env.ADMIN_REGISTRATION_CODES || '')
+    .split(',')
+    .map(code => code.trim())
+    .filter(code => code.length > 0)
+  
+  console.log("[v0] Admin code validation - provided:", formData.adminCode.trim(), "valid codes:", validAdminCodes)
   
   if (!validAdminCodes.includes(formData.adminCode.trim())) {
+    console.log("[v0] Admin code rejected")
     return { error: 'Invalid admin registration code' }
   }
 
