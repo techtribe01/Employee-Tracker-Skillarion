@@ -62,8 +62,6 @@ class MetricsCollector {
   }
 }
 
-export const metricsCollector = new MetricsCollector()
-
 /**
  * Database performance monitoring
  */

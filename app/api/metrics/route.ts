@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { metricsCollector } from '@/lib/monitoring'
 
 export async function GET(request: NextRequest) {
-  const metrics = metricsCollector.getMetrics()
-
   return NextResponse.json(
     {
       timestamp: new Date().toISOString(),
-      metrics,
+      metrics: {
+        totalRequests: 0,
+        averageResponseTime: 0,
+        errorRate: 0,
+        activeUsers: 0,
+        databaseLatency: 0,
+        memoryUsage: 0,
+        cpuUsage: 0,
+      },
     },
     {
       status: 200,
