@@ -49,6 +49,61 @@ export async function signUp(formData: {
   return { success: true, needsEmailVerification: true }
 }
 
+export async function signUpAdmin(formData: {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  adminCode: string
+}) {
+  const supabase = await createClient()
+
+  // Verify admin code (should be stored securely in environment or database)
+  const validAdminCodes = (process.env.ADMIN_REGISTRATION_CODES || '').split(',')
+  
+  if (!validAdminCodes.includes(formData.adminCode.trim())) {
+    return { error: 'Invalid admin registration code' }
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email: formData.email,
+    password: formData.password,
+    options: {
+      emailRedirectTo:
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+        `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+      data: {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        role: 'admin',
+      },
+    },
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // Create admin profile with approved status (no 2FA required)
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        status: 'approved',
+        role: 'admin',
+        requires_2fa: false,
+      })
+      .eq('id', data.user.id)
+
+    if (profileError) {
+      console.error('Admin profile update error:', profileError)
+      return { error: 'Failed to set up admin account' }
+    }
+  }
+
+  return { success: true, needsEmailVerification: false }
+}
+
 export async function signIn(formData: {
   email: string
   password: string
