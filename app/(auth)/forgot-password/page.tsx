@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { forgotPassword } from "@/lib/auth-actions"
 
 const DOMAIN = "@skillariondevelopment.in"
 
@@ -14,14 +15,23 @@ export default function ForgotPasswordPage() {
   const [emailPrefix, setEmailPrefix] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSent, setIsSent] = useState(false)
+  const [error, setError] = useState("")
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError("")
     setIsLoading(true)
-    setTimeout(() => {
+
+    const result = await forgotPassword(`${emailPrefix}${DOMAIN}`)
+
+    if (result.error) {
+      setError(result.error)
       setIsLoading(false)
-      setIsSent(true)
-    }, 1500)
+      return
+    }
+
+    setIsLoading(false)
+    setIsSent(true)
   }
 
   if (isSent) {
@@ -81,6 +91,13 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">

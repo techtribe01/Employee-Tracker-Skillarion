@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock, User, Briefcase, ArrowRight, Check } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Eye, EyeOff, Mail, Lock, User, Briefcase, ArrowRight, Check, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SkillArionLogo } from "@/components/skillarion-logo"
+import { signUp, signUpAdmin } from "@/lib/auth-actions"
 
 const DOMAIN = "@skillariondevelopment.in"
 
@@ -81,7 +83,9 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -89,17 +93,74 @@ export default function SignupPage() {
     department: "",
     password: "",
     confirmPassword: "",
+    adminCode: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError("")
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    if (!isAdmin && !formData.department) {
+      setError("Please select a department")
+      return
+    }
+
+    if (isAdmin && !formData.adminCode) {
+      setError("Please enter admin code")
+      return
+    }
+
     setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1500)
+
+    const email = `${formData.emailPrefix}${DOMAIN}`
+    let result
+
+    if (isAdmin) {
+      result = await signUpAdmin({
+        email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        adminCode: formData.adminCode,
+      })
+    } else {
+      result = await signUp({
+        email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        department: formData.department,
+      })
+    }
+
+    if (result.error) {
+      setError(result.error)
+      setIsLoading(false)
+      return
+    }
+
+    // Redirect based on role
+    if (isAdmin) {
+      router.push(`/login?email=${encodeURIComponent(email)}`)
+    } else {
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+    }
   }
 
   return (
@@ -113,6 +174,37 @@ export default function SignupPage() {
             Join SkillArion Development team
           </p>
         </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
+      {/* Admin Toggle */}
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-warning" />
+            <p className="text-sm font-medium">Register as Admin</p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Skip email verification & 2FA setup</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsAdmin(!isAdmin)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            isAdmin ? "bg-primary" : "bg-muted"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
+              isAdmin ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
       </div>
 
       {/* Form */}
@@ -177,29 +269,52 @@ export default function SignupPage() {
         </div>
 
         {/* Department */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="department" className="text-sm font-medium text-foreground">
-            Department
-          </Label>
-          <Select
-            value={formData.department}
-            onValueChange={(v) => updateField("department", v)}
-          >
-            <SelectTrigger className="h-12">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Select department" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {DEPARTMENTS.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!isAdmin && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="department" className="text-sm font-medium text-foreground">
+              Department
+            </Label>
+            <Select
+              value={formData.department}
+              onValueChange={(v) => updateField("department", v)}
+            >
+              <SelectTrigger className="h-12">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Select department" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {DEPARTMENTS.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Admin Code */}
+        {isAdmin && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="adminCode" className="text-sm font-medium text-foreground">
+              Admin Registration Code
+            </Label>
+            <div className="relative">
+              <ShieldAlert className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="adminCode"
+                type="text"
+                placeholder="Enter admin code"
+                value={formData.adminCode}
+                onChange={(e) => updateField("adminCode", e.target.value.toUpperCase())}
+                className="pl-10 h-12 font-mono tracking-widest"
+                required={isAdmin}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Password */}
         <div className="flex flex-col gap-2">
