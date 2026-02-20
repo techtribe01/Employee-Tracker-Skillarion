@@ -41,6 +41,7 @@ import {
   type CalendarEventRow,
   type EventType,
 } from "@/lib/calendar-actions"
+import { getCalendarEvents as getNewCalendarEvents } from "@/lib/calendar-event-actions"
 import { getLeaveEventsForCalendar, type LeaveRequestRow } from "@/lib/leave-actions"
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -90,18 +91,32 @@ export default function CalendarPage() {
     const firstDay = new Date(currentYear, currentMonth, 1)
     const lastDay = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
 
+    console.log('[v0] Loading events for:', firstDay, 'to', lastDay)
+
     const [eventsResult, leavesResult] = await Promise.all([
-      getCalendarEvents({
+      // Try new event system first, fall back to old if needed
+      getNewCalendarEvents({
         startDate: firstDay.toISOString(),
         endDate: lastDay.toISOString(),
-      }),
+      }).catch(() => getCalendarEvents({
+        startDate: firstDay.toISOString(),
+        endDate: lastDay.toISOString(),
+      })),
       getLeaveEventsForCalendar({
         startDate: firstDay.toISOString().split("T")[0],
         endDate: lastDay.toISOString().split("T")[0],
       }),
     ])
 
-    if (eventsResult.data) setEvents(eventsResult.data)
+    if (eventsResult.error) {
+      console.error('[v0] Error loading events:', eventsResult.error)
+    } else if (eventsResult.events) {
+      console.log('[v0] Loaded events:', eventsResult.events.length)
+      setEvents(eventsResult.events)
+    } else if (eventsResult.data) {
+      setEvents(eventsResult.data)
+    }
+    
     if (leavesResult.data) setMyLeaves(leavesResult.data.myLeaves as LeaveRequestRow[])
     setLoading(false)
   }, [currentYear, currentMonth])
@@ -179,9 +194,15 @@ export default function CalendarPage() {
 
   function getEventsForDay(day: number): CalendarEventRow[] {
     const date = new Date(currentYear, currentMonth, day)
+    const dateString = date.toDateString()
+    
+    // Normalize all dates to compare just the date part
     return events.filter((e) => {
-      const eDate = new Date(e.start_time)
-      return isSameDay(eDate, date)
+      const eventStart = new Date(e.start_time).toDateString()
+      const eventEnd = new Date(e.end_time).toDateString()
+      
+      // Event spans this day if event starts on or before this day AND ends on or after this day
+      return eventStart <= dateString && eventEnd >= dateString
     })
   }
 
