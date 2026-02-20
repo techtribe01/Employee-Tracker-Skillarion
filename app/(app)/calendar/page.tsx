@@ -85,6 +85,7 @@ export default function CalendarPage() {
   const [newLocation, setNewLocation] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [creating, setCreating] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const loadEvents = useCallback(async () => {
     setLoading(true)
@@ -94,30 +95,48 @@ export default function CalendarPage() {
     console.log('[v0] Loading events for:', firstDay, 'to', lastDay)
 
     const [eventsResult, leavesResult] = await Promise.all([
-      // Try new event system first, fall back to old if needed
       getNewCalendarEvents({
         startDate: firstDay.toISOString(),
         endDate: lastDay.toISOString(),
-      }).catch(() => getCalendarEvents({
-        startDate: firstDay.toISOString(),
-        endDate: lastDay.toISOString(),
-      })),
+      }),
       getLeaveEventsForCalendar({
         startDate: firstDay.toISOString().split("T")[0],
         endDate: lastDay.toISOString().split("T")[0],
       }),
     ])
 
-    if (eventsResult.error) {
-      console.error('[v0] Error loading events:', eventsResult.error)
-    } else if (eventsResult.events) {
-      console.log('[v0] Loaded events:', eventsResult.events.length)
-      setEvents(eventsResult.events)
-    } else if (eventsResult.data) {
-      setEvents(eventsResult.data)
+    // Handle new event system response
+    if (eventsResult.success && eventsResult.events) {
+      console.log('[v0] Loaded new format events:', eventsResult.events.length)
+      // Convert new event format to CalendarEventRow format for compatibility
+      const convertedEvents = eventsResult.events.map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        description: e.description,
+        location: e.location,
+        start_time: e.start_time,
+        end_time: e.end_time,
+        event_type: 'meeting', // Default type for new events
+        created_by: e.created_by,
+        event_color: e.event_color,
+        visibility: e.visibility,
+      }))
+      setEvents(convertedEvents)
+    } else if (eventsResult.error) {
+      console.error('[v0] New events error, trying old system:', eventsResult.error)
+      // Fallback to old system
+      const oldResult = await getCalendarEvents({
+        startDate: firstDay.toISOString(),
+        endDate: lastDay.toISOString(),
+      })
+      if (oldResult.data) {
+        setEvents(oldResult.data)
+      }
     }
-    
-    if (leavesResult.data) setMyLeaves(leavesResult.data.myLeaves as LeaveRequestRow[])
+
+    if (leavesResult.data) {
+      setMyLeaves(leavesResult.data.myLeaves as LeaveRequestRow[])
+    }
     setLoading(false)
   }, [currentYear, currentMonth])
 
@@ -229,7 +248,13 @@ export default function CalendarPage() {
   }
 
   function getSelectedDayEvents() {
-    return events.filter((e) => isSameDay(new Date(e.start_time), selectedDate))
+    const dateString = selectedDate.toDateString()
+    return events.filter((e) => {
+      const eventStart = new Date(e.start_time).toDateString()
+      const eventEnd = new Date(e.end_time).toDateString()
+      // Event is visible on this day if it starts on or before and ends on or after this day
+      return eventStart <= dateString && eventEnd >= dateString
+    })
   }
 
   function getSelectedDayLeaves() {
@@ -237,8 +262,9 @@ export default function CalendarPage() {
     return myLeaves.filter((l) => l.start_date <= dateStr && l.end_date >= dateStr)
   }
 
-  const selectedEvents = getSelectedDayEvents()
-  const selectedLeaves = getSelectedDayLeaves()
+  useEffect(() => {
+    loadEvents()
+  }, [loadEvents, refreshTrigger])
 
   const monthName = new Date(currentYear, currentMonth).toLocaleString("default", { month: "long" })
 
@@ -264,6 +290,8 @@ export default function CalendarPage() {
     setNewDescription("")
     setShowCreateDialog(false)
     setCreating(false)
+    // Trigger a refresh to load newly created event
+    setRefreshTrigger(prev => prev + 1)
     await loadEvents()
   }
 
@@ -271,6 +299,10 @@ export default function CalendarPage() {
     await deleteCalendarEvent(id)
     await loadEvents()
   }
+
+  // Calculate selected date's events and leaves
+  const selectedEvents = getSelectedDayEvents()
+  const selectedLeaves = getSelectedDayLeaves()
 
   return (
     <div className="flex flex-col gap-4 px-5 pt-6 pb-4">
